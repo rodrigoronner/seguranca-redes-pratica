@@ -1,4 +1,25 @@
-version: "3.9"
+# ============================================================
+# Ambiente de Laboratório — Segurança de Redes na Prática
+# Repositório: https://github.com/rodrigoronner/seguranca-redes-pratica
+#
+# Dois containers conectados pela rede virtual "labnet":
+#   atacante  192.168.10.10  Kali Linux
+#   alvo      192.168.10.20  Ubuntu 22.04 (Redis, SSH, Apache)
+#
+# Uso:
+#   docker compose up -d       # inicia o ambiente
+#   docker compose ps          # verifica status
+#   docker compose stop        # para sem destruir
+#   docker compose down        # destrói containers e rede
+#
+# Nota de arquitetura:
+#   As linhas "platform: linux/arm64" são necessárias em Macs
+#   com Apple Silicon (M1/M2/M3/M4). Remova-as se o seu
+#   processador for Intel ou AMD (x86_64).
+#   Para verificar: execute "uname -m" no terminal.
+#     aarch64 -> Apple Silicon / ARM64  -> mantenha as linhas
+#     x86_64  -> Intel / AMD            -> remova as linhas
+# ============================================================
 
 networks:
   labnet:
@@ -8,9 +29,17 @@ networks:
         - subnet: 192.168.10.0/24
 
 services:
+
+  # ----------------------------------------------------------
+  # Container atacante — Kali Linux
+  # Ferramentas instaladas no Cap. 1:
+  #   nmap, tcpdump, net-tools, iputils-ping, curl, wget
+  # Ferramentas adicionadas nos labs seguintes:
+  #   redis-tools (Cap. 3), snort (Cap. 6)
+  # ----------------------------------------------------------
   atacante:
     image: kalilinux/kali-rolling
-    platform: linux/arm64
+    platform: linux/arm64        # remover para Intel/AMD
     container_name: atacante
     hostname: atacante
     networks:
@@ -20,12 +49,19 @@ services:
     stdin_open: true
     command: /bin/bash
     cap_add:
-      - NET_ADMIN
-      - NET_RAW
+      - NET_ADMIN   # necessário para iptables/nftables
+      - NET_RAW     # necessário para tcpdump e Nmap SYN scan
 
+  # ----------------------------------------------------------
+  # Container alvo — Ubuntu 22.04 LTS
+  # Serviços ativos na inicialização:
+  #   Redis  :6379  sem autenticação (proposital, para labs)
+  #   SSH    :22    login por senha habilitado
+  #   Apache :80    formulário de login em /login.html
+  # ----------------------------------------------------------
   alvo:
     image: ubuntu:22.04
-    platform: linux/arm64
+    platform: linux/arm64        # remover para Intel/AMD
     container_name: alvo
     hostname: alvo
     networks:
@@ -33,13 +69,16 @@ services:
         ipv4_address: 192.168.10.20
     tty: true
     stdin_open: true
-    command: >
-      /bin/bash -c "
-      apt-get update -qq &&
-      apt-get install -y -qq openssh-server apache2 vsftpd netcat-openbsd nmap net-tools iproute2 iputils-ping > /dev/null 2>&1 &&
-      service ssh start &&
-      service apache2 start &&
-      service vsftpd start &&
-      tail -f /dev/null"
+    command:
+      - /bin/bash
+      - -c
+      - |
+        apt-get update -qq &&
+        apt-get install -y -qq openssh-server apache2 redis-server netcat-openbsd nmap net-tools iproute2 iputils-ping > /dev/null 2>&1 &&
+        service ssh start &&
+        service apache2 start &&
+        redis-server --daemonize yes --protected-mode no --bind 0.0.0.0 --loglevel warning &&
+        echo '<!DOCTYPE html><html lang=pt-BR><head><meta charset=UTF-8><title>Login - Sistema Interno</title></head><body style="font-family:sans-serif;max-width:400px;margin:80px auto"><h2>Sistema Interno</h2><form method=POST action=/login><p><label>Usuário:<br><input type=text name=usuario style=width:100%></label></p><p><label>Senha:<br><input type=password name=senha style=width:100%></label></p><button type=submit>Entrar</button></form></body></html>' > /var/www/html/login.html &&
+        tail -f /dev/null
     cap_add:
-      - NET_ADMIN
+      - NET_ADMIN   # necessário para iptables/nftables nos laboratórios

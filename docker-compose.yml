@@ -1,0 +1,45 @@
+version: "3.9"
+
+networks:
+  labnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.10.0/24
+
+services:
+  atacante:
+    image: kalilinux/kali-rolling
+    platform: linux/arm64
+    container_name: atacante
+    hostname: atacante
+    networks:
+      labnet:
+        ipv4_address: 192.168.10.10
+    tty: true
+    stdin_open: true
+    command: /bin/bash
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+
+  alvo:
+    image: ubuntu:22.04
+    platform: linux/arm64
+    container_name: alvo
+    hostname: alvo
+    networks:
+      labnet:
+        ipv4_address: 192.168.10.20
+    tty: true
+    stdin_open: true
+    command: >
+      /bin/bash -c "
+      apt-get update -qq &&
+      apt-get install -y -qq openssh-server apache2 vsftpd netcat-openbsd nmap net-tools iproute2 iputils-ping > /dev/null 2>&1 &&
+      service ssh start &&
+      service apache2 start &&
+      service vsftpd start &&
+      tail -f /dev/null"
+    cap_add:
+      - NET_ADMIN

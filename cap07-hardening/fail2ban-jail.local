@@ -1,0 +1,20 @@
+# fail2ban jail.local — Capítulo 7: Hardening
+# Laboratório: Segurança de Redes na Prática
+# Copiar para: /etc/fail2ban/jail.local
+# Aplicar com: service fail2ban restart
+
+[DEFAULT]
+# Banir por 1 hora após violação
+bantime  = 3600
+
+# Janela de tempo para contar tentativas (10 minutos)
+findtime = 600
+
+# Número máximo de tentativas antes do ban
+maxretry = 3
+
+[sshd]
+enabled  = true
+port     = 22
+logpath  = /var/log/auth.log
+maxretry = 3

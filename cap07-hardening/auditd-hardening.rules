@@ -1,0 +1,21 @@
+# auditd rules — Capítulo 7: Hardening
+# Laboratório: Segurança de Redes na Prática
+# Copiar para: /etc/audit/rules.d/hardening.rules
+# Aplicar com: service auditd restart
+# Verificar com: auditctl -l
+
+# ── Monitorar arquivos de identidade ──────────────────────────
+-w /etc/passwd  -p wa -k identity
+-w /etc/shadow  -p wa -k identity
+-w /etc/group   -p wa -k identity
+
+# ── Monitorar configurações críticas ─────────────────────────
+-w /etc/ssh/sshd_config -p wa -k sshd_config
+-w /etc/sudoers         -p wa -k sudoers
+-w /etc/sudoers.d/      -p wa -k sudoers
+
+# ── Registrar execução de comandos como root ─────────────────
+-a always,exit -F arch=b64 -S execve -F euid=0 -k privileged_exec
+
+# ── Registrar eventos de autenticação ────────────────────────
+-w /var/log/auth.log -p wa -k auth_log

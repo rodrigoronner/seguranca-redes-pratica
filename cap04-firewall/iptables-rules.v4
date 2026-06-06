@@ -1,0 +1,32 @@
+# Regras iptables — Capítulo 4: Firewall
+# Laboratório: Segurança de Redes na Prática
+# Aplicar com: iptables-restore < iptables-rules.v4
+# Persistir com: iptables-save > /etc/iptables/rules.v4
+
+*filter
+:INPUT DROP [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+
+# Aceitar loopback
+-A INPUT -i lo -j ACCEPT
+
+# Aceitar conexões já estabelecidas / relacionadas
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Aceitar ICMP (ping)
+-A INPUT -p icmp -j ACCEPT
+
+# Bloquear Redis de origens externas
+-A INPUT -p tcp --dport 6379 ! -i lo -j DROP
+
+# Permitir SSH apenas do container atacante
+-A INPUT -p tcp --dport 22 -s 192.168.10.10 -j ACCEPT
+
+# Bloquear SSH de qualquer outra origem
+-A INPUT -p tcp --dport 22 -j DROP
+
+# Liberar HTTP para qualquer origem
+-A INPUT -p tcp --dport 80 -j ACCEPT
+
+COMMIT

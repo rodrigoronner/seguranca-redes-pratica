@@ -1,0 +1,46 @@
+# Regras Snort 3 — Capítulo 6: Detecção de Intrusão
+# Laboratório: Segurança de Redes na Prática
+# Copiar para: /etc/snort/rules/local/local.rules
+# Configurar em snort.lua: ips = { include = "/etc/snort/rules/local/local.rules" }
+
+# ── Regra 1: Ping ICMP ao container alvo ──────────────────────
+alert icmp any any -> 192.168.10.20 any (
+    msg:"ICMP ping detectado para o alvo";
+    itype:8;
+    sid:1000001; rev:1;
+)
+
+# ── Regra 2: Possível varredura de portas SYN ─────────────────
+# Dispara após 15 pacotes SYN por segundo do mesmo IP
+alert tcp any any -> 192.168.10.20 any (
+    msg:"Possivel varredura de porta SYN";
+    flags:S,12;
+    flow:to_server;
+    detection_filter:track by_src, count 15, seconds 1;
+    sid:1000002; rev:1;
+)
+
+# ── Regra 3: Acesso ao Redis — comando PING ───────────────────
+alert tcp any any -> 192.168.10.20 6379 (
+    msg:"Acesso ao Redis - comando PING detectado";
+    flow:to_server,established;
+    content:"PING"; nocase;
+    sid:1000003; rev:1;
+)
+
+# ── Regra 4: Acesso ao Redis — escrita de dados ───────────────
+alert tcp any any -> 192.168.10.20 6379 (
+    msg:"Acesso ao Redis - escrita de dados sem autenticacao";
+    flow:to_server,established;
+    content:"SET"; nocase;
+    sid:1000004; rev:1;
+)
+
+# ── Regra 5: Acesso ao Redis — leitura de dados ───────────────
+# Adicionada na atividade 3 do Laboratório 2
+alert tcp any any -> 192.168.10.20 6379 (
+    msg:"Acesso ao Redis - leitura de dados sem autenticacao";
+    flow:to_server,established;
+    content:"GET"; nocase;
+    sid:1000005; rev:1;
+)

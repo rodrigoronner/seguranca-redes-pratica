@@ -1,0 +1,10 @@
+# sudoers.d/operador — Capítulo 7: Hardening
+# Laboratório: Segurança de Redes na Prática
+# Copiar para: /etc/sudoers.d/operador
+# Permissões obrigatórias: chmod 440 /etc/sudoers.d/operador
+# Verificar com: visudo -c
+
+# Operador pode reiniciar Apache e SSH, mas não pode
+# editar configurações nem executar comandos arbitrários
+operador ALL=(root) NOPASSWD: /usr/bin/service apache2 restart
+operador ALL=(root) NOPASSWD: /usr/bin/service ssh restart

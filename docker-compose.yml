@@ -32,10 +32,6 @@ services:
 
   # ----------------------------------------------------------
   # Container atacante — Kali Linux
-  # Ferramentas instaladas no Cap. 1:
-  #   nmap, tcpdump, net-tools, iputils-ping, curl, wget
-  # Ferramentas adicionadas nos labs seguintes:
-  #   redis-tools (Cap. 3), snort (Cap. 6)
   # ----------------------------------------------------------
   atacante:
     image: kalilinux/kali-rolling
@@ -49,15 +45,12 @@ services:
     stdin_open: true
     command: /bin/bash
     cap_add:
-      - NET_ADMIN   # necessário para iptables/nftables
-      - NET_RAW     # necessário para tcpdump e Nmap SYN scan
+      - NET_ADMIN
+      - NET_RAW
 
   # ----------------------------------------------------------
   # Container alvo — Ubuntu 22.04 LTS
-  # Serviços ativos na inicialização:
-  #   Redis  :6379  sem autenticação (proposital, para labs)
-  #   SSH    :22    login por senha habilitado
-  #   Apache :80    formulário de login em /login.html
+  # Serviços: Redis :6379 (sem auth), SSH :22, Apache :80
   # ----------------------------------------------------------
   alvo:
     image: ubuntu:22.04
@@ -75,10 +68,12 @@ services:
       - |
         apt-get update -qq &&
         apt-get install -y -qq openssh-server apache2 redis-server netcat-openbsd nmap net-tools iproute2 iputils-ping > /dev/null 2>&1 &&
+        sed -i 's/^bind 127.0.0.1.*/bind 0.0.0.0/' /etc/redis/redis.conf &&
+        sed -i 's/^protected-mode yes/protected-mode no/' /etc/redis/redis.conf &&
         service ssh start &&
         service apache2 start &&
-        redis-server --daemonize yes --protected-mode no --bind 0.0.0.0 --loglevel warning &&
+        pkill -f redis-server 2>/dev/null; redis-server /etc/redis/redis.conf --daemonize yes &&
         echo '<!DOCTYPE html><html lang=pt-BR><head><meta charset=UTF-8><title>Login - Sistema Interno</title></head><body style="font-family:sans-serif;max-width:400px;margin:80px auto"><h2>Sistema Interno</h2><form method=POST action=/login><p><label>Usuário:<br><input type=text name=usuario style=width:100%></label></p><p><label>Senha:<br><input type=password name=senha style=width:100%></label></p><button type=submit>Entrar</button></form></body></html>' > /var/www/html/login.html &&
         tail -f /dev/null
     cap_add:
-      - NET_ADMIN   # necessário para iptables/nftables nos laboratórios
+      - NET_ADMIN

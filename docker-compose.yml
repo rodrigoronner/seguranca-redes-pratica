@@ -72,8 +72,7 @@ services:
         sed -i 's/^protected-mode yes/protected-mode no/' /etc/redis/redis.conf &&
         service ssh start &&
         service apache2 start &&
-        pkill -f redis-server 2>/dev/null; redis-server /etc/redis/redis.conf --daemonize yes &&
         echo '<!DOCTYPE html><html lang=pt-BR><head><meta charset=UTF-8><title>Login - Sistema Interno</title></head><body style="font-family:sans-serif;max-width:400px;margin:80px auto"><h2>Sistema Interno</h2><form method=POST action=/login><p><label>Usuário:<br><input type=text name=usuario style=width:100%></label></p><p><label>Senha:<br><input type=password name=senha style=width:100%></label></p><button type=submit>Entrar</button></form></body></html>' > /var/www/html/login.html &&
-        tail -f /dev/null
+        exec redis-server /etc/redis/redis.conf --daemonize no
     cap_add:
       - NET_ADMIN

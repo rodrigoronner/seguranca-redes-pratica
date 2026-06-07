@@ -1,36 +1,14 @@
-# sshd_config endurecido — Capítulo 7: Hardening
-# Laboratório: Segurança de Redes na Prática
-# Copiar para: /etc/ssh/sshd_config
-# Aplicar com: service ssh restart
-#
-# ATENÇÃO: ajuste "AllowUsers" para o usuário correto
-#          antes de aplicar em produção.
-
-# Porta padrão (considere mudar em produção)
 Port 22
-
-# Apenas protocolo 2 (protocolo 1 é obsoleto e inseguro)
-Protocol 2
-
-# Autenticação
-PermitRootLogin no
+PermitRootLogin prohibit-password
 PasswordAuthentication no
 PubkeyAuthentication yes
 AuthorizedKeysFile .ssh/authorized_keys
 PermitEmptyPasswords no
-
-# Sessão
 LoginGraceTime 30
 MaxAuthTries 3
 MaxSessions 5
-
-# Restrição de acesso por usuário
-AllowUsers ubuntu
-
-# Desabilitar tunelamentos desnecessários
+AllowUsers root
 X11Forwarding no
 AllowTcpForwarding no
 AllowAgentForwarding no
-
-# Banner de aviso legal (exibido antes da autenticação)
 Banner /etc/ssh/banner.txt

@@ -67,7 +67,7 @@ services:
       - -c
       - |
         apt-get update -qq &&
-        apt-get install -y -qq openssh-server apache2 redis-server netcat-openbsd nmap net-tools iproute2 iputils-ping > /dev/null 2>&1 &&
+        apt-get install -y -qq openssh-server apache2 redis-server netcat-openbsd nmap net-tools iproute2 iputils-ping curl > /dev/null 2>&1 &&
         sed -i 's/^bind 127.0.0.1.*/bind 0.0.0.0/' /etc/redis/redis.conf &&
         sed -i 's/^protected-mode yes/protected-mode no/' /etc/redis/redis.conf &&
         service ssh start &&

@@ -32,6 +32,10 @@ services:
 
   # ----------------------------------------------------------
   # Container atacante — Kali Linux
+  # Ferramentas instaladas no Cap. 1:
+  #   nmap, tcpdump, net-tools, iputils-ping, curl, wget
+  # Ferramentas adicionadas nos labs seguintes:
+  #   redis-tools (Cap. 3), tshark (Cap. 3), snort (Cap. 6)
   # ----------------------------------------------------------
   atacante:
     image: kalilinux/kali-rolling
@@ -45,12 +49,15 @@ services:
     stdin_open: true
     command: /bin/bash
     cap_add:
-      - NET_ADMIN
-      - NET_RAW
+      - NET_ADMIN   # necessário para iptables/nftables
+      - NET_RAW     # necessário para tcpdump e Nmap SYN scan
 
   # ----------------------------------------------------------
   # Container alvo — Ubuntu 22.04 LTS
-  # Serviços: Redis :6379 (sem auth), SSH :22, Apache :80
+  # Serviços ativos na inicialização:
+  #   Redis  :6379  sem autenticação (proposital, para labs)
+  #   SSH    :22    login por senha habilitado (root/toor)
+  #   Apache :80    formulário de login em /login.html
   # ----------------------------------------------------------
   alvo:
     image: ubuntu:22.04
@@ -67,12 +74,21 @@ services:
       - -c
       - |
         apt-get update -qq &&
-        apt-get install -y -qq openssh-server apache2 redis-server netcat-openbsd nmap net-tools iproute2 iputils-ping curl > /dev/null 2>&1 &&
+        apt-get install -y -qq \
+          openssh-server apache2 redis-server \
+          netcat-openbsd nmap net-tools \
+          iproute2 iputils-ping curl wget \
+          iptables nftables \
+          fail2ban auditd \
+          apache2-utils > /dev/null 2>&1 &&
         sed -i 's/^bind 127.0.0.1.*/bind 0.0.0.0/' /etc/redis/redis.conf &&
         sed -i 's/^protected-mode yes/protected-mode no/' /etc/redis/redis.conf &&
+        echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config &&
+        echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config &&
+        echo 'root:toor' | chpasswd &&
         service ssh start &&
         service apache2 start &&
-        echo '<!DOCTYPE html><html lang=pt-BR><head><meta charset=UTF-8><title>Login - Sistema Interno</title></head><body style="font-family:sans-serif;max-width:400px;margin:80px auto"><h2>Sistema Interno</h2><form method=POST action=/login><p><label>Usuário:<br><input type=text name=usuario style=width:100%></label></p><p><label>Senha:<br><input type=password name=senha style=width:100%></label></p><button type=submit>Entrar</button></form></body></html>' > /var/www/html/login.html &&
+        printf '<!DOCTYPE html>\n<html lang=pt-BR>\n<head><meta charset=UTF-8><title>Login - Sistema Interno</title></head>\n<body style="font-family:sans-serif;max-width:400px;margin:80px auto">\n<h2>Sistema Interno</h2>\n<form method=POST action=/login>\n<p><label>Usuário:<br><input type=text name=usuario style=width:100%%></label></p>\n<p><label>Senha:<br><input type=password name=senha style=width:100%%></label></p>\n<button type=submit>Entrar</button>\n</form>\n</body></html>' > /var/www/html/login.html &&
         exec redis-server /etc/redis/redis.conf --daemonize no
     cap_add:
-      - NET_ADMIN
+      - NET_ADMIN   # necessário para iptables/nftables nos laboratórios
